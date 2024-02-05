@@ -5,15 +5,12 @@
   "type": "module",
   "main": "./src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-	"db": "(if not exist data (mkdir data)) && mongod --dbpath=./data"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "joi": "^17.11.0",
-    "mongoose": "^8.0.3"
+    "express": "^4.18.2"
   }
 }

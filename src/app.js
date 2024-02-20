@@ -19,9 +19,9 @@ async function fetchAsync (url) {
 }
 
 var table = Object();
-const exchangeMarkets = [
-    { "ramzinex": "https://api.nobitex.ir" },
+const exchangeMarkets = [,
     { "nobitex": "https://api.nobitex.ir" },
+    { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
     { "bitpin": "https://api.nobitex.ir" }
 ];
 const markets = [
@@ -48,18 +48,31 @@ function makeTemplate() {
 }
 
 app.get('/', async (req, res) => {
-    // table.nobitex.btc.IRR_BUY = response.stats["btc_rls"].bestBuy;
 
+    // Nobitex
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`${exchangeMarkets[0].ramzinex}/market/stats?srcCurrency=${currency}&dstCurrency=rls`)
-        table.nobitex[currency].irr_buy = response.stats[`${currency}-rls`].bestBuy
-        table.nobitex[currency].irr_sell = response.stats[`${currency}-rls`].bestSell
+        const response = await fetchAsync(`https://api.nobitex.ir/market/stats?srcCurrency=${currency}&dstCurrency=rls`);
+        let curr = response.stats[`${currency}-rls`];
+        if (!curr) continue;
+        table.nobitex[currency].irr_buy = parseFloat(curr.bestBuy);
+        table.nobitex[currency].irr_sell = parseFloat(curr.bestSell);
     }
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`${exchangeMarkets[0].ramzinex}/market/stats?srcCurrency=${currency}&dstCurrency=usdt`)
-        // table.nobitex[currency].usdt_buy = response.stats[`${currency}-usdt`].bestBuy
-        // table.nobitex[currency].usdt_sell = response.stats[`${currency}-usdt`].bestSell
-        console.log(response.stats)
+        const response = await fetchAsync(`https://api.nobitex.ir/market/stats?srcCurrency=${currency}&dstCurrency=usdt`);
+        let curr = response.stats[`${currency}-usdt`];
+        if (!curr) continue;
+        table.nobitex[currency].usdt_buy = parseFloat(curr.bestBuy);
+        table.nobitex[currency].usdt_sell = parseFloat(curr.bestSell);
+    }
+
+    // Ramzinex
+    const response = await fetchAsync("https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs");
+    for(let i = 0; i < response.data.length; i++) {
+        const currency = response.data[i];
+        const base = currency.base_currency_symbol.en;
+        if (markets.indexOf(base) == -1) continue;
+        table.ramzinex[`${currency.base_currency_symbol.en}`][`${currency.quote_currency_symbol.en}_buy`] = currency.buy;
+        table.ramzinex[`${currency.base_currency_symbol.en}`][`${currency.quote_currency_symbol.en}_sell`]  = currency.sell;
     }
 
     res.send(table);

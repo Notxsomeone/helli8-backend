@@ -22,10 +22,10 @@ var table = Object();
 const exchangeMarkets = [,
     { "nobitex": "https://api.nobitex.ir" },
     { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
-    { "bitpin": "https://api.nobitex.ir" }
+    { "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/" }
 ];
-const markets = [
-    "irr",
+const markets = [ 
+    //"irr",
     "usdt",
     "btc",
     "eth",
@@ -49,7 +49,7 @@ function makeTemplate() {
 
 app.get('/', async (req, res) => {
 
-    // Nobitex
+    //Nobitex
     for(const currency in table.nobitex){
         const response = await fetchAsync(`https://api.nobitex.ir/market/stats?srcCurrency=${currency}&dstCurrency=rls`);
         let curr = response.stats[`${currency}-rls`];
@@ -65,7 +65,7 @@ app.get('/', async (req, res) => {
         table.nobitex[currency].usdt_sell = parseFloat(curr.bestSell);
     }
 
-    // Ramzinex
+    //Ramzinex
     const response = await fetchAsync("https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs");
     for(let i = 0; i < response.data.length; i++) {
         const currency = response.data[i];
@@ -73,6 +73,16 @@ app.get('/', async (req, res) => {
         if (markets.indexOf(base) == -1) continue;
         table.ramzinex[`${currency.base_currency_symbol.en}`][`${currency.quote_currency_symbol.en}_buy`] = currency.buy;
         table.ramzinex[`${currency.base_currency_symbol.en}`][`${currency.quote_currency_symbol.en}_sell`]  = currency.sell;
+     }
+
+    // Bitpin
+    const response2 = await fetchAsync("https://api.bitpin.ir/v1/mkt/currencies/");
+    for(let i = 0; i < response2.results.length; i++) {
+        const currency = response2.results[i];
+        const names = currency.code.toLowerCase();
+        if (markets.indexOf(names) == -1) continue;
+        table.bitpin[`${currency.code.toLowerCase()}`][`irr_buy`] = parseFloat(currency.price_info.price);
+        table.bitpin[`${currency.code.toLowerCase()}`][`usdt_buy`] = parseFloat(currency.price_info_usdt.price);
     }
 
     res.send(table);

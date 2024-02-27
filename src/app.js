@@ -82,7 +82,9 @@ app.get('/', async (req, res) => {
         const names = currency.code.toLowerCase();
         if (markets.indexOf(names) == -1) continue;
         table.bitpin[`${currency.code.toLowerCase()}`][`irr_buy`] = parseFloat(currency.price_info.price);
+	table.bitpin[`${currency.code.toLowerCase()}`][`irr_sell`] = parseFloat(currency.price_info.price);
         table.bitpin[`${currency.code.toLowerCase()}`][`usdt_buy`] = parseFloat(currency.price_info_usdt.price);
+        table.bitpin[`${currency.code.toLowerCase()}`][`usdt_sell`] = parseFloat(currency.price_info_usdt.price);
     }
 
     res.send(table);

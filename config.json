@@ -1,0 +1,18 @@
+{
+    "markets": [ 
+        "usdt",
+        "btc",
+        "eth",
+        "doge",
+        "shib",
+        "sol",
+        "trx",
+        "matic",
+        "ton" 
+    ],
+    "exchangeMarkets": [
+        { "nobitex": "https://api.nobitex.ir/market/stats" },
+        { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
+        { "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/" }
+    ]
+}

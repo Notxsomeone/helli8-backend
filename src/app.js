@@ -1,9 +1,11 @@
 
-import express from 'express';
-import http from 'http';
+const express = require('express');
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+
+const markets = require("../config.json").markets;
+const exchangeMarkets = require("../config.json").exchangeMarkets;
 
 app.use(express.json());
 
@@ -19,23 +21,6 @@ async function fetchAsync (url) {
 }
 
 var table = Object();
-const exchangeMarkets = [,
-    { "nobitex": "https://api.nobitex.ir" },
-    { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
-    { "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/" }
-];
-const markets = [ 
-    //"irr",
-    "usdt",
-    "btc",
-    "eth",
-    "doge",
-    "shib",
-    "sol",
-    "trx",
-    "matic",
-    "ton"
-];
 
 function makeTemplate() {
   exchangeMarkets.forEach(e => {
@@ -49,24 +34,24 @@ function makeTemplate() {
 
 app.get('/', async (req, res) => {
 
-    //Nobitex
+    // Nobitex
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`https://api.nobitex.ir/market/stats?srcCurrency=${currency}&dstCurrency=rls`);
+        const response = await fetchAsync(`${exchangeMarkets[0].nobitex}?srcCurrency=${currency}&dstCurrency=rls`);
         let curr = response.stats[`${currency}-rls`];
         if (!curr) continue;
         table.nobitex[currency].irr_buy = parseFloat(curr.bestBuy);
         table.nobitex[currency].irr_sell = parseFloat(curr.bestSell);
     }
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`https://api.nobitex.ir/market/stats?srcCurrency=${currency}&dstCurrency=usdt`);
+        const response = await fetchAsync(`${exchangeMarkets[0].nobitex}?srcCurrency=${currency}&dstCurrency=usdt`);
         let curr = response.stats[`${currency}-usdt`];
         if (!curr) continue;
         table.nobitex[currency].usdt_buy = parseFloat(curr.bestBuy);
         table.nobitex[currency].usdt_sell = parseFloat(curr.bestSell);
     }
 
-    //Ramzinex
-    const response = await fetchAsync("https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs");
+    // Ramzinex
+    const response = await fetchAsync(`${exchangeMarkets[1].ramzinex}`);
     for(let i = 0; i < response.data.length; i++) {
         const currency = response.data[i];
         const base = currency.base_currency_symbol.en;
@@ -76,77 +61,16 @@ app.get('/', async (req, res) => {
      }
 
     // Bitpin
-    const response2 = await fetchAsync("https://api.bitpin.ir/v1/mkt/currencies/");
+    const response2 = await fetchAsync(`${exchangeMarkets[2].bitpin}`);
     for(let i = 0; i < response2.results.length; i++) {
         const currency = response2.results[i];
         const names = currency.code.toLowerCase();
         if (markets.indexOf(names) == -1) continue;
         table.bitpin[`${currency.code.toLowerCase()}`][`irr_buy`] = parseFloat(currency.price_info.price);
-	table.bitpin[`${currency.code.toLowerCase()}`][`irr_sell`] = parseFloat(currency.price_info.price);
+	    table.bitpin[`${currency.code.toLowerCase()}`][`irr_sell`] = parseFloat(currency.price_info.price);
         table.bitpin[`${currency.code.toLowerCase()}`][`usdt_buy`] = parseFloat(currency.price_info_usdt.price);
         table.bitpin[`${currency.code.toLowerCase()}`][`usdt_sell`] = parseFloat(currency.price_info_usdt.price);
     }
 
     res.send(table);
 });
-
-
-/*
-IRR
-USDT
-BTC
-ETH
-DOGE
-SHIB
-SOL
-TRX
-MATIC
-TON
-*/
-
-/*
-{
-    "ramzinex": {
-        "btc": {
-            "usdt_buy": 1231321,
-            "usdt_sell": 132142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        },
-        "eth": {
-            "usdt_buy": 1231321,
-            "usdt_sell": 132142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        }
-    },
-    "nobitex": {
-        "btc": {
-            "usdt_buy": 1231321,
-            "usdt_sell": 132142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        },
-        "eth": {
-            "usdt_buy": 1231321,
-            "usdt_sell": 13214142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        }
-    },
-    "bitpin": {
-        "btc": {
-            "usdt_buy": 1321,
-            "usdt_sell": 132142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        },
-        "eth": {
-            "usdt_buy": 1231321,
-            "usdt_sell": 132142,
-            "irr_buy": 13231421,
-            "irr_sell": 124141
-        }
-    }
-}
-*/

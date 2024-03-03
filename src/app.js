@@ -73,5 +73,7 @@ app.get('/', async (req, res) => {
         table.bitpin[`${currency.code.toLowerCase()}`][`usdt_sell`] = parseFloat(currency.price_info_usdt.price);
     }
 
+    console.log(`Got request from ${req.ip}`);
+    res.setHeader("Access-Control-Allow-Origin", frontendAddress);
     res.send(table);
 });

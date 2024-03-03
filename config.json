@@ -14,5 +14,6 @@
         { "nobitex": "https://api.nobitex.ir/market/stats" },
         { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
         { "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/" }
-    ]
+    ],
+    "frontendAddress": "http://127.0.0.1:3000"
 }

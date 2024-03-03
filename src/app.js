@@ -5,7 +5,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const markets = require("../config.json").markets;
-const exchangeMarkets = require("../config.json").exchangeMarkets;
+const brokers = require("../config.json").brokers;
+const frontendAddress= require("../config.json").frontendAddress;
 
 app.use(express.json());
 
@@ -23,7 +24,7 @@ async function fetchAsync (url) {
 var table = Object();
 
 function makeTemplate() {
-  exchangeMarkets.forEach(e => {
+  brokers.forEach(e => {
     let emarketName = Object.keys(e)[0];
     table[emarketName] = Object();
     markets.forEach(m => {
@@ -36,14 +37,14 @@ app.get('/', async (req, res) => {
 
     // Nobitex
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`${exchangeMarkets[0].nobitex}?srcCurrency=${currency}&dstCurrency=rls`);
+        const response = await fetchAsync(`${brokers[0].nobitex}?srcCurrency=${currency}&dstCurrency=rls`);
         let curr = response.stats[`${currency}-rls`];
         if (!curr) continue;
         table.nobitex[currency].irr_buy = parseFloat(curr.bestBuy);
         table.nobitex[currency].irr_sell = parseFloat(curr.bestSell);
     }
     for(const currency in table.nobitex){
-        const response = await fetchAsync(`${exchangeMarkets[0].nobitex}?srcCurrency=${currency}&dstCurrency=usdt`);
+        const response = await fetchAsync(`${brokers[0].nobitex}?srcCurrency=${currency}&dstCurrency=usdt`);
         let curr = response.stats[`${currency}-usdt`];
         if (!curr) continue;
         table.nobitex[currency].usdt_buy = parseFloat(curr.bestBuy);
@@ -51,7 +52,7 @@ app.get('/', async (req, res) => {
     }
 
     // Ramzinex
-    const response = await fetchAsync(`${exchangeMarkets[1].ramzinex}`);
+    const response = await fetchAsync(`${brokers[1].ramzinex}`);
     for(let i = 0; i < response.data.length; i++) {
         const currency = response.data[i];
         const base = currency.base_currency_symbol.en;
@@ -61,7 +62,7 @@ app.get('/', async (req, res) => {
      }
 
     // Bitpin
-    const response2 = await fetchAsync(`${exchangeMarkets[2].bitpin}`);
+    const response2 = await fetchAsync(`${brokers[2].bitpin}`);
     for(let i = 0; i < response2.results.length; i++) {
         const currency = response2.results[i];
         const names = currency.code.toLowerCase();

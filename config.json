@@ -10,10 +10,9 @@
         "matic",
         "ton" 
     ],
-    "brokers": [
-        { "nobitex": "https://api.nobitex.ir/market/stats" },
-        { "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/pairs" },
-        { "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/" }
-    ],
-    "frontendAddress": "http://192.168.100.50:5500"
+    "brokers": {
+        "nobitex": "https://api.nobitex.ir/market/stats",
+        "ramzinex": "https://publicapi.ramzinex.com/exchange/api/v1.0/exchange/prices",
+        "bitpin": "https://api.bitpin.ir/v1/mkt/currencies/"
+    }
 }

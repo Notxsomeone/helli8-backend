@@ -37,6 +37,7 @@ app.listen(PORT, async () => {
     console.log(`Server listening on ${PORT}`);
     await mg.connect(DB_IP + "/cache");
     console.log(`Connected to database: ${DB_IP}`);
+    await update();
 });
 
 async function fetchAsync (url) {
@@ -45,7 +46,7 @@ async function fetchAsync (url) {
     return data;
 }
 
-app.post('/update', async (req, res) => {
+async function update() {
     await Price.deleteMany({}).exec().catch((err) => {
         console.error(`[DB] Deleting prices failed: ${err}`);
     });
@@ -158,6 +159,10 @@ app.post('/update', async (req, res) => {
             await arb.save();
         }
     }
+}
+
+app.post('/update', async (req, res) => {
+    await update();
     res.sendStatus(200);
 });
 

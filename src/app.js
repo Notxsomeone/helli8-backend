@@ -40,6 +40,8 @@ app.listen(PORT, async () => {
     await update();
 });
 
+setInterval(update, 60*1000);
+
 async function fetchAsync (url) {
     let response = await fetch(url);
     let data = await response.json();
@@ -47,6 +49,7 @@ async function fetchAsync (url) {
 }
 
 async function update() {
+    console.log("Updating DB.");
     await Price.deleteMany({}).exec().catch((err) => {
         console.error(`[DB] Deleting prices failed: ${err}`);
     });

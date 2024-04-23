@@ -5,10 +5,11 @@
         "eth",
         "doge",
         "shib",
-        "sol",
         "trx",
-        "matic",
-        "ton" 
+        "ton",
+        "sol",
+        "matic"
+         
     ],
     "brokers": {
         "nobitex": "https://api.nobitex.ir/market/stats",

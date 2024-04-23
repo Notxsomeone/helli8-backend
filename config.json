@@ -1,8 +1,8 @@
 {
     "markets": [ 
-        "usdt",
         "btc",
         "eth",
+        "usdt",
         "doge",
         "shib",
         "trx",

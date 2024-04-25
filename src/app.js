@@ -34,9 +34,9 @@ const Price = mg.model("price", priceSchema);
 const Arbitrage = mg.model("arbitrage", arbitrageSchema);
 
 app.listen(PORT, async () => {
-    console.log(`Server listening on ${PORT}`);
+    console.log(`${printTime()} Server listening on ${PORT}`);
     await mg.connect(DB_IP + "/cache");
-    console.log(`Connected to database: ${DB_IP}`);
+    console.log(`${printTime()} Connected to database: ${DB_IP}`);
     await update();
 });
 
@@ -48,8 +48,20 @@ async function fetchAsync (url) {
     return data;
 }
 
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
+
+function printTime() {
+    const now = new Date();
+    return `[${pad(now.getHours(), 2)}:${pad(now.getMinutes(), 2)}:${pad(now.getSeconds(), 2)}]`
+}
+
 async function update() {
-    console.log("Updating DB.");
+    console.log(`${printTime()} Updating DB`);
+
     await Price.deleteMany({}).exec().catch((err) => {
         console.error(`[DB] Deleting prices failed: ${err}`);
     });
@@ -162,6 +174,7 @@ async function update() {
             await arb.save();
         }
     }
+    console.log(`${printTime()} Update finished`);
 }
 
 app.post('/update', async (req, res) => {
@@ -170,7 +183,7 @@ app.post('/update', async (req, res) => {
 });
 
 app.get('/', async (req, res) => {
-    console.log(`Got request from ${req.ip}`);
+    console.log(`${printTime()} GET / request from ${req.ip}`);
     
     var table = Object();
     const brokers_arr = Object.keys(brokers);
@@ -194,3 +207,18 @@ app.get('/', async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.send(table);
 });
+
+
+app.get('/arb', async (req, res) => {
+    console.log(`${printTime()} GET /arb request from ${req.ip}`);
+
+    if (req.query.currency == null) {
+    	res.send(await Arbitrage.find({}));
+    } else {
+	if (markets.indexOf(req.query.currency) == -1) {
+	    res.sendStatus(400);
+	} else {
+	    res.send(await Arbitrage.find({ currency_name: req.query.currency }));
+	}
+    }
+})

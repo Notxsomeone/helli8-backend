@@ -1,7 +1,6 @@
 
 const express = require("express");
 const mg = require("mongoose")
-var cors = require('cors')
 
 const app   = express();
 const PORT  = process.env.PORT;
@@ -10,7 +9,6 @@ const DB_IP = process.env.DB_IP
 const markets = require("../config.json").markets;
 const brokers = require("../config.json").brokers;
 
-app.use(cors())
 app.use(express.json());
 
 const priceSchema = new mg.Schema({
@@ -213,6 +211,7 @@ app.get('/', async (req, res) => {
 
 app.get('/arb', async (req, res) => {
     console.log(`${printTime()} GET /arb request from ${req.ip}`);
+    res.setHeader("Access-Control-Allow-Origin", "*");
 
     if (req.query.currency == null) {
     	res.send(await Arbitrage.find({}));

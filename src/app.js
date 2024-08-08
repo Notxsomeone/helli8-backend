@@ -44,8 +44,7 @@ setInterval(update, 60*1000);
 
 async function fetchAsync (url) {
     let response = await fetch(url);
-    let data = await response.json();
-    return data;
+    return response;
 }
 
 function pad(n, width, z) {
@@ -60,17 +59,22 @@ function printTime() {
 }
 
 async function update() {
+    const startTime = Date.now();
     console.log(`${printTime()} Updating DB`);
-
-    await Price.deleteMany({}).exec().catch((err) => {
-        console.error(`[DB] Deleting prices failed: ${err}`);
-    });
     
     // Nobitex
     for (let i = 0; i < markets.length; i++) {
         const currency = markets[i];
-        const curr_irr = (await fetchAsync(`${brokers.nobitex}?srcCurrency=${currency}&dstCurrency=rls`)).stats[`${currency}-rls`];
-        const curr_usdt = (await fetchAsync(`${brokers.nobitex}?srcCurrency=${currency}&dstCurrency=usdt`)).stats[`${currency}-usdt`];
+        const curr_irr_raw = await fetchAsync(`${brokers.nobitex}?srcCurrency=${currency}&dstCurrency=rls`);
+        const curr_usdt_raw = await fetchAsync(`${brokers.nobitex}?srcCurrency=${currency}&dstCurrency=usdt`);
+	if(!curr_irr_raw.ok || !curr_usdt_raw.ok) {
+	    continue;
+	}
+	await Price.deleteMany({broker: 'nobitex', name: currency}).exec().catch((err) => {
+            console.error(`[DB] Deleting prices failed: ${err}`);
+    	});
+	const curr_irr = (await curr_irr_raw.json()).stats[`${currency}-rls`];
+	const curr_usdt = (await curr_usdt_raw.json()).stats[`${currency}-usdt`];
 
         var price = new Price({
             broker: "nobitex",
@@ -92,47 +96,59 @@ async function update() {
     }
 
     // Ramzinex
-    const response = (await fetchAsync(`${brokers.ramzinex}`)).data;
-    for(let i = 0; i < markets.length; i++) {
-        var currency = markets[i];
+    const res_raw = await fetchAsync(`${brokers.ramzinex}`);
+    if(res_raw.ok) {
+	const response = (await res_raw.json()).data;
+	await Price.deleteMany({broker: 'ramzinex'}).exec().catch((err) => {
+            console.error(`[DB] Deleting prices failed: ${err}`);
+    	});
+    	for(let i = 0; i < markets.length; i++) {
+            var currency = markets[i];
         
-        if (currency == "shib") currency = "100shib";
-        if (currency == "ton") currency = "toncoin";
+            if (currency == "shib") currency = "100shib";
+            if (currency == "ton") currency = "toncoin";
         
-        let price = new Price({
-            broker: "ramzinex",
-            name: currency,
-            irr_buy: response[`${currency}irr`] ? response[`${currency}irr`].buy : 0,
-            irr_sell: response[`${currency}irr`] ? response[`${currency}irr`].sell : 0,
-            usdt_buy: response[`${currency}usdt`] ? response[`${currency}usdt`].buy : 0,
-            usdt_sell: response[`${currency}usdt`] ? response[`${currency}usdt`].sell : 0
-        });
-        if (currency == "100shib") {
-            price.name = "shib";
-            price.irr_buy *=  0.01;
-            price.irr_sell *= 0.01;
-            price.usdt_buy *= 0.01;
-            price.usdt_buy *= 0.01;
-        }
-        if (currency == "toncoin") price.name = "ton";
+            let price = new Price({
+                broker: "ramzinex",
+                name: currency,
+                irr_buy: response[`${currency}irr`] ? response[`${currency}irr`].buy : 0,
+                irr_sell: response[`${currency}irr`] ? response[`${currency}irr`].sell : 0,
+                usdt_buy: response[`${currency}usdt`] ? response[`${currency}usdt`].buy : 0,
+                usdt_sell: response[`${currency}usdt`] ? response[`${currency}usdt`].sell : 0
+            });
+            if (currency == "100shib") {
+                price.name = "shib";
+                price.irr_buy *=  0.01;
+                price.irr_sell *= 0.01;
+                price.usdt_buy *= 0.01;
+                price.usdt_buy *= 0.01;
+            }
+            if (currency == "toncoin") price.name = "ton";
         
-        await price.save();
+            await price.save();
+    	}
     }
 
     // Bitpin
-    const response2 = await fetchAsync(`${brokers.bitpin}`);
-    for(let i = 0; i < response2.results.length; i++) {
-        const currency = response2.results[i];
-        if (markets.indexOf(currency.code.toLowerCase()) == -1) continue;
-        const price = new Price({
-            broker: "bitpin",
-            name: currency.code.toLowerCase(),
-            irr_buy: currency.price_info.price ? parseFloat(currency.price_info.price) * 10 : 0,
-            irr_sell: currency.price_info.price ? parseFloat(currency.price_info.price) * 10 : 0,
-            usdt_buy: currency.price_info_usdt.price ? parseFloat(currency.price_info_usdt.price) : 0,
-            usdt_sell: currency.price_info_usdt.price ? parseFloat(currency.price_info_usdt.price) : 0
-        });
-        await price.save();
+    const res_raw2 = await fetchAsync(`${brokers.bitpin}`);
+    if(res_raw2.ok) {
+    	const response2 = (await res_raw2.json());
+	await Price.deleteMany({broker: 'bitpin'}).exec().catch((err) => {
+            console.error(`[DB] Deleting prices failed: ${err}`);
+    	});
+        for(let i = 0; i < response2.results.length; i++) {
+            const currency = response2.results[i];
+            if (markets.indexOf(currency.code.toLowerCase()) == -1) continue;
+            const price = new Price({
+                broker: "bitpin",
+                name: currency.code.toLowerCase(),
+                irr_buy: currency.price_info.price ? parseFloat(currency.price_info.price) * 10 : 0,
+                irr_sell: currency.price_info.price ? parseFloat(currency.price_info.price) * 10 : 0,
+                usdt_buy: currency.price_info_usdt.price ? parseFloat(currency.price_info_usdt.price) : 0,
+                usdt_sell: currency.price_info_usdt.price ? parseFloat(currency.price_info_usdt.price) : 0
+            });
+            await price.save();
+        }
     }
 
     // Calculate and Cache Arbitrage
@@ -174,7 +190,8 @@ async function update() {
             await arb.save();
         }
     }
-    console.log(`${printTime()} Update finished`);
+    const elapsedTime = ((Date.now() - startTime)/1000).toFixed(3);
+    console.log(`${printTime()} Update finished. Took ${elapsedTime}s`);
 }
 
 app.post('/update', async (req, res) => {
